@@ -34,18 +34,32 @@ class Config:
     #                          .getOrCreate())
     #     return self.spark_app
     
+    # def initialize_spark_session(self, appName):
+    #     if self.spark_app is None:
+    #         master_url = os.getenv("SPARK_MASTER", "local[*]")  # fallback an toàn
+    #         self.spark_app = (
+    #             SparkSession.builder
+    #             .master(master_url)
+    #             .appName(appName)
+    #             .config("spark.ui.port", "4040") 
+    #             .config("spark.es.nodes", self.elasticsearch_conf["es.nodes"])
+    #             .config("spark.es.port",  self.elasticsearch_conf["es.port"])
+    #             .getOrCreate()
+    #         )
+    #     return self.spark_app
+
     def initialize_spark_session(self, appName):
         if self.spark_app is None:
-            master_url = os.getenv("SPARK_MASTER", "local[*]")  # fallback an toàn
-            self.spark_app = (
+            builder = (
                 SparkSession.builder
-                .master(master_url)
                 .appName(appName)
-                .config("spark.ui.port", "4040") 
-                .config("spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version", "2")
-                .config("spark.hadoop.mapreduce.fileoutputcommitter.cleanup-failures.ignored", "true")
+                .config("spark.ui.port", "4040")
                 .config("spark.es.nodes", self.elasticsearch_conf["es.nodes"])
                 .config("spark.es.port",  self.elasticsearch_conf["es.port"])
-                .getOrCreate()
+                .config("spark.hadoop.fs.defaultFS", self.hdfs_namenode)  # <— thêm dòng này
             )
+            master_url = os.getenv("SPARK_MASTER")  # chỉ dùng nếu bạn CHỦ ĐỘNG export biến này
+            if master_url:
+                builder = builder.master(master_url)
+            self.spark_app = builder.getOrCreate()
         return self.spark_app
